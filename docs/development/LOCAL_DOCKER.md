@@ -10,6 +10,7 @@ This document describes the local WCMS stack for Phase 1 development.
 - `redis`: Redis 7.4 on `localhost:6379`
 - `rabbitmq`: RabbitMQ 4.0 on `localhost:5672`, management UI on `localhost:15672`
 - `auth-service`: Spring Boot auth service inside Docker on container port `8080`
+- `user-service`: Spring Boot user service inside Docker on container port `8080`
 - `nginx`: public entrypoint on `http://localhost`
 
 The host-facing HTTP port is `80`. Do not use `18081` for Docker-based local access.
@@ -28,9 +29,10 @@ Check status:
 docker compose ps
 curl.exe -i http://localhost/health
 curl.exe -i http://localhost/actuator/health
+curl.exe -i http://localhost/actuator/user-service/health
 ```
 
-Expected health response from auth-service:
+Expected health response from Spring Boot services:
 
 ```json
 {"status":"UP"}

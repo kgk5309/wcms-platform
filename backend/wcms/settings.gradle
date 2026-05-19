@@ -7,3 +7,4 @@ include 'core:core-event'
 include 'core:core-jpa'
 
 include 'services:auth-service'
+include 'services:user-service'
