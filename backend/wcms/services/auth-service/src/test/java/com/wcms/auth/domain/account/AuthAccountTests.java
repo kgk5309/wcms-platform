@@ -2,6 +2,9 @@ package com.wcms.auth.domain.account;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.wcms.auth.domain.account.AccountRole;
+import com.wcms.auth.domain.account.AccountStatus;
+import com.wcms.auth.domain.account.AuthAccount;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;

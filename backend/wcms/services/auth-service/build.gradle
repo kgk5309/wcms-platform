@@ -32,10 +32,12 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+tasks.named('compileTestJava') {
+    classpath += sourceSets.main.output
+}
+
 sourceSets {
     test {
         java.srcDirs += sourceSets.main.java.srcDirs
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
     }
 }
