@@ -9,16 +9,20 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "refresh_token_sessions")
 public class RefreshTokenSession {
 
     @Id
-    @Column(nullable = false, updatable = false)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(nullable = false, updatable = false)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     private UUID accountId;
 
     @Column(nullable = false, unique = true, length = 128)

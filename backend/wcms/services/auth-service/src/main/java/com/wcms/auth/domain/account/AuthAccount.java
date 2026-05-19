@@ -12,13 +12,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "auth_accounts")
 public class AuthAccount {
 
     @Id
-    @Column(nullable = false, updatable = false)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(nullable = false, updatable = false, columnDefinition = "BINARY(16)")
     private UUID id;
 
     @Column(nullable = false, unique = true, length = 80)
