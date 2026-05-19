@@ -1,1 +1,9 @@
-rootProject.name = 'wcms'
+rootProject.name = 'wcms-backend'
+
+include 'core:core-common'
+include 'core:core-web'
+include 'core:core-security'
+include 'core:core-event'
+include 'core:core-jpa'
+
+include 'services:auth-service'
