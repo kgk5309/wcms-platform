@@ -1,6 +1,6 @@
 # WCMS Platform
 
-DID 중심 WCMS SaaS 플랫폼.
+DID-centered WCMS SaaS platform.
 
 ## Repository Layout
 
@@ -19,3 +19,7 @@ docs/      Product, architecture, and implementation context
 - Messaging: RabbitMQ
 - Routing: Nginx
 - Frontend: React
+
+## Local Development
+
+See [docs/development/LOCAL_DOCKER.md](docs/development/LOCAL_DOCKER.md) for Docker Compose startup, local auth account, and auth API smoke-test commands.
