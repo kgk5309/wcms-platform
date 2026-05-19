@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +59,41 @@ class AuthSecurityIntegrationTests {
     }
 
     @Test
+    void superAdminCanAccessSuperAdminEndpoint() throws Exception {
+        AuthAccount account = AuthAccount.create(
+                UUID.fromString("00000000-0000-4000-8000-000000000001"),
+                "platform-admin",
+                "platform-admin@wcms.local",
+                "encoded",
+                AccountRole.SUPER_ADMIN
+        );
+        String token = jwtTokenIssuer.issue(account, Instant.now()).tokenValue();
+
+        mockMvc.perform(get("/test/protected/super-admin")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("SUPER_ADMIN"));
+    }
+
+    @Test
+    void nonSuperAdminCannotAccessSuperAdminEndpoint() throws Exception {
+        AuthAccount account = AuthAccount.create(
+                UUID.fromString("00000000-0000-4000-8000-000000000002"),
+                "platform-user",
+                "platform-user@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_USER
+        );
+        String token = jwtTokenIssuer.issue(account, Instant.now()).tokenValue();
+
+        mockMvc.perform(get("/test/protected/super-admin")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.error.message").value("Access denied"));
+    }
+
+    @Test
     void missingAccessTokenCannotAccessProtectedEndpoint() throws Exception {
         mockMvc.perform(get("/test/protected/me"))
                 .andExpect(status().isUnauthorized())
@@ -79,6 +115,12 @@ class AuthSecurityIntegrationTests {
 
         @GetMapping("/test/protected/me")
         AuthenticatedUser me(Principal principal) {
+            return (AuthenticatedUser) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+        }
+
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        @GetMapping("/test/protected/super-admin")
+        AuthenticatedUser superAdmin(Principal principal) {
             return (AuthenticatedUser) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
         }
     }
