@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.wcms.auth.domain.account.AccountRole;
 import com.wcms.auth.domain.account.AuthAccount;
+import com.wcms.core.security.AuthenticatedUser;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.UUID;
@@ -77,8 +78,8 @@ class AuthSecurityIntegrationTests {
     static class ProtectedController {
 
         @GetMapping("/test/protected/me")
-        AuthPrincipal me(Principal principal) {
-            return (AuthPrincipal) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+        AuthenticatedUser me(Principal principal) {
+            return (AuthenticatedUser) ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
         }
     }
 }

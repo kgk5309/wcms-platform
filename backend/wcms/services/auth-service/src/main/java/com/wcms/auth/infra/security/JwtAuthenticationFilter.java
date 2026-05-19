@@ -2,6 +2,7 @@ package com.wcms.auth.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wcms.auth.api.AuthErrorResponse;
+import com.wcms.core.security.AuthenticatedUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            AuthPrincipal user = jwtTokenVerifier.verify(authorization.substring(BEARER_PREFIX.length()));
+            AuthenticatedUser user = jwtTokenVerifier.verify(authorization.substring(BEARER_PREFIX.length()));
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     user,
                     null,

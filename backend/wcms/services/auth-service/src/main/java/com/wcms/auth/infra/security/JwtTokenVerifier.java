@@ -6,6 +6,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.wcms.auth.application.AuthTokenProperties;
+import com.wcms.core.security.AuthenticatedUser;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.Instant;
@@ -25,7 +26,7 @@ public class JwtTokenVerifier {
         this.clock = clock;
     }
 
-    public AuthPrincipal verify(String tokenValue) {
+    public AuthenticatedUser verify(String tokenValue) {
         try {
             SignedJWT jwt = SignedJWT.parse(tokenValue);
             if (!JWSAlgorithm.HS256.equals(jwt.getHeader().getAlgorithm())) {
@@ -37,7 +38,7 @@ public class JwtTokenVerifier {
 
             JWTClaimsSet claims = jwt.getJWTClaimsSet();
             validateRegisteredClaims(claims);
-            return new AuthPrincipal(
+            return new AuthenticatedUser(
                     UUID.fromString(claims.getSubject()),
                     claims.getStringClaim("username"),
                     claims.getStringClaim("role"),
