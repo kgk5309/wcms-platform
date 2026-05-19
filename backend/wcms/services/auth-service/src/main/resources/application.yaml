@@ -39,3 +39,6 @@ wcms:
     login:
       max-failures: ${WCMS_AUTH_LOGIN_MAX_FAILURES:5}
       lock-duration: ${WCMS_AUTH_LOGIN_LOCK_DURATION:10m}
+    cleanup:
+      enabled: ${WCMS_AUTH_CLEANUP_ENABLED:true}
+      refresh-token-fixed-delay: ${WCMS_AUTH_REFRESH_TOKEN_CLEANUP_DELAY:PT1H}

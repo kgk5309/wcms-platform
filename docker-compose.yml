@@ -64,6 +64,8 @@ services:
       WCMS_RABBITMQ_USER: ${WCMS_RABBITMQ_USER:-wcms}
       WCMS_RABBITMQ_PASSWORD: ${WCMS_RABBITMQ_PASSWORD:-wcms_password}
       WCMS_AUTH_TOKEN_SECRET: ${WCMS_AUTH_TOKEN_SECRET:-wcms-local-dev-secret-must-be-rotated}
+      WCMS_AUTH_CLEANUP_ENABLED: ${WCMS_AUTH_CLEANUP_ENABLED:-true}
+      WCMS_AUTH_REFRESH_TOKEN_CLEANUP_DELAY: ${WCMS_AUTH_REFRESH_TOKEN_CLEANUP_DELAY:-PT1H}
     depends_on:
       mariadb:
         condition: service_healthy
