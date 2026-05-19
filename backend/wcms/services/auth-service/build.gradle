@@ -31,3 +31,11 @@ dependencies {
     testRuntimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+sourceSets {
+    test {
+        java.srcDirs += sourceSets.main.java.srcDirs
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
