@@ -1,6 +1,7 @@
 package com.wcms.auth.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class AuthServiceTests {
@@ -118,6 +120,43 @@ class AuthServiceTests {
     }
 
     @Test
+    void refreshRejectsAlreadyRevokedRefreshToken() {
+        RefreshTokenSession session = RefreshTokenSession.issue(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                TokenHash.sha256("old-refresh-token"),
+                NOW.plus(Duration.ofDays(1)),
+                "127.0.0.1",
+                "JUnit"
+        );
+        session.revoke(NOW.minusSeconds(1));
+        when(refreshTokenSessionRepository.findByTokenHash(TokenHash.sha256("old-refresh-token")))
+                .thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("old-refresh-token"), REQUEST_META))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessage("Invalid refresh token");
+    }
+
+    @Test
+    void refreshRejectsExpiredRefreshToken() {
+        RefreshTokenSession session = RefreshTokenSession.issue(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                TokenHash.sha256("expired-refresh-token"),
+                NOW.minusSeconds(1),
+                "127.0.0.1",
+                "JUnit"
+        );
+        when(refreshTokenSessionRepository.findByTokenHash(TokenHash.sha256("expired-refresh-token")))
+                .thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> authService.refresh(new RefreshTokenRequest("expired-refresh-token"), REQUEST_META))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessage("Invalid refresh token");
+    }
+
+    @Test
     void logoutRevokesActiveRefreshToken() {
         RefreshTokenSession session = RefreshTokenSession.issue(
                 UUID.randomUUID(),
@@ -133,5 +172,35 @@ class AuthServiceTests {
         authService.logout(new LogoutRequest("refresh-token"));
 
         assertThat(session.getRevokedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void logoutIgnoresUnknownRefreshToken() {
+        when(refreshTokenSessionRepository.findByTokenHash(TokenHash.sha256("unknown-refresh-token")))
+                .thenReturn(Optional.empty());
+
+        authService.logout(new LogoutRequest("unknown-refresh-token"));
+    }
+
+    @Test
+    void loginRecordsFailureAndLocksAccountWhenCredentialsAreInvalid() {
+        AuthAccount account = AuthAccount.create(
+                UUID.randomUUID(),
+                "admin",
+                "admin@example.com",
+                "encoded",
+                AccountRole.PLATFORM_MASTER
+        );
+        when(accountRepository.findByUsername("admin")).thenReturn(Optional.of(account));
+        when(passwordEncoder.matches("wrong-password", "encoded")).thenReturn(false);
+
+        for (int attempt = 0; attempt < loginProperties.maxFailures(); attempt += 1) {
+            assertThatThrownBy(() -> authService.login(new LoginRequest("admin", "wrong-password"), REQUEST_META))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessage("Invalid username or password");
+        }
+
+        assertThat(account.getFailedLoginCount()).isEqualTo(loginProperties.maxFailures());
+        assertThat(account.getLockedUntil()).isEqualTo(NOW.plus(loginProperties.lockDuration()));
     }
 }
