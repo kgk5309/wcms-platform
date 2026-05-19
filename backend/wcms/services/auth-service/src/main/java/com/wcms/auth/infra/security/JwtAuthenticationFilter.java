@@ -1,7 +1,9 @@
 package com.wcms.auth.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wcms.auth.api.AuthErrorResponse;
+import com.wcms.core.common.ApiError;
+import com.wcms.core.common.ApiResponse;
+import com.wcms.core.common.ErrorCode;
 import com.wcms.core.security.AuthenticatedUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -67,7 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(
                 response.getWriter(),
-                AuthErrorResponse.failure("UNAUTHORIZED", "Invalid access token")
+                ApiResponse.failure(new ApiError(ErrorCode.UNAUTHORIZED.name(), "Invalid access token"))
         );
     }
 }

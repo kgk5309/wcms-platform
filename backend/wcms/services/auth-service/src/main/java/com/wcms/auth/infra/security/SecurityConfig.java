@@ -1,13 +1,15 @@
 package com.wcms.auth.infra.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wcms.auth.api.AuthErrorResponse;
+import com.wcms.core.common.ApiError;
+import com.wcms.core.common.ApiResponse;
+import com.wcms.core.common.ErrorCode;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,7 +41,10 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             objectMapper.writeValue(
                                     response.getWriter(),
-                                    AuthErrorResponse.failure("UNAUTHORIZED", "Authentication required")
+                                    ApiResponse.failure(new ApiError(
+                                            ErrorCode.UNAUTHORIZED.name(),
+                                            "Authentication required"
+                                    ))
                             );
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
@@ -47,7 +52,7 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             objectMapper.writeValue(
                                     response.getWriter(),
-                                    AuthErrorResponse.failure("FORBIDDEN", "Access denied")
+                                    ApiResponse.failure(new ApiError(ErrorCode.FORBIDDEN.name(), "Access denied"))
                             );
                         }))
                 .authorizeHttpRequests(auth -> auth
