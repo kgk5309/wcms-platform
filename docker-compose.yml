@@ -1,0 +1,65 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: wcms-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: ${WCMS_MARIADB_ROOT_PASSWORD:-wcms_root_password}
+      WCMS_MARIADB_APP_PASSWORD: ${WCMS_MARIADB_APP_PASSWORD:-wcms_app_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - wcms-mariadb-data:/var/lib/mysql
+      - ./infra/mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: wcms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - wcms-redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: wcms-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${WCMS_RABBITMQ_USER:-wcms}
+      RABBITMQ_DEFAULT_PASS: ${WCMS_RABBITMQ_PASSWORD:-wcms_password}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - wcms-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: wcms-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mariadb
+      - redis
+      - rabbitmq
+
+volumes:
+  wcms-mariadb-data:
+  wcms-redis-data:
+  wcms-rabbitmq-data:
