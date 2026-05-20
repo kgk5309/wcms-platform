@@ -99,6 +99,7 @@ services:
       WCMS_RABBITMQ_PASSWORD: ${WCMS_RABBITMQ_PASSWORD:-wcms_password}
       WCMS_USER_TOKEN_ISSUER: ${WCMS_AUTH_TOKEN_ISSUER:-wcms-platform}
       WCMS_USER_TOKEN_SECRET: ${WCMS_AUTH_TOKEN_SECRET:-wcms-local-dev-secret-must-be-rotated}
+      WCMS_AUTH_SERVICE_BASE_URL: http://auth-service:8080
     depends_on:
       mariadb:
         condition: service_healthy

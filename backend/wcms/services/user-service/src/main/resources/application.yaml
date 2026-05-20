@@ -38,6 +38,8 @@ springdoc:
 
 wcms:
   user:
+    auth-service:
+      base-url: ${WCMS_AUTH_SERVICE_BASE_URL:http://localhost:18081}
     token:
       issuer: ${WCMS_USER_TOKEN_ISSUER:wcms-platform}
       secret: ${WCMS_USER_TOKEN_SECRET:wcms-local-dev-secret-must-be-rotated}

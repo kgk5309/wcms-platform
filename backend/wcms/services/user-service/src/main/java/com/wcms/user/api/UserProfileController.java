@@ -1,10 +1,12 @@
 package com.wcms.user.api;
 
 import com.wcms.core.common.ApiResponse;
+import com.wcms.user.application.UserOnboardingService;
 import com.wcms.user.application.UserProfileService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,9 +24,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
+    private final UserOnboardingService userOnboardingService;
 
-    public UserProfileController(UserProfileService userProfileService) {
+    public UserProfileController(UserProfileService userProfileService, UserOnboardingService userOnboardingService) {
         this.userProfileService = userProfileService;
+        this.userOnboardingService = userOnboardingService;
+    }
+
+    @PostMapping("/onboarding")
+    @ResponseStatus(HttpStatus.CREATED)
+    ApiResponse<OnboardUserResponse> onboard(
+            @Valid @RequestBody OnboardUserRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader(HttpHeaders.AUTHORIZATION) String authorization
+    ) {
+        return ApiResponse.success(OnboardUserResponse.from(userOnboardingService.onboard(
+                request.toCommand(),
+                authorization
+        )));
     }
 
     @PostMapping

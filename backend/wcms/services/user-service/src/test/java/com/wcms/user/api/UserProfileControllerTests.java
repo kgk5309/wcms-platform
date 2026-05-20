@@ -17,7 +17,11 @@ import com.wcms.user.application.CreateUserProfileCommand;
 import com.wcms.user.application.DuplicateUserProfileException;
 import com.wcms.user.application.ChangeUserRoleCommand;
 import com.wcms.user.application.MoveUserScopeCommand;
+import com.wcms.user.application.AuthAccountResult;
+import com.wcms.user.application.OnboardUserCommand;
+import com.wcms.user.application.OnboardedUser;
 import com.wcms.user.application.UpdateUserProfileCommand;
+import com.wcms.user.application.UserOnboardingService;
 import com.wcms.user.application.UserProfileService;
 import com.wcms.user.domain.UserProfile;
 import com.wcms.user.domain.UserRole;
@@ -54,6 +58,74 @@ class UserProfileControllerTests {
 
     @MockitoBean
     private UserProfileService userProfileService;
+
+    @MockitoBean
+    private UserOnboardingService userOnboardingService;
+
+    @Test
+    void onboardReturnsCreatedAuthAccountAndProfileForSuperAdmin() throws Exception {
+        UUID authAccountId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                UUID.randomUUID(),
+                authAccountId,
+                "Platform Manager",
+                "platform-manager@wcms.local",
+                null,
+                UserRole.PLATFORM_MASTER,
+                UserScopeType.PLATFORM,
+                null,
+                null
+        );
+        when(userOnboardingService.onboard(any(OnboardUserCommand.class), any(String.class)))
+                .thenReturn(new OnboardedUser(
+                        new AuthAccountResult(
+                                authAccountId,
+                                "platform-manager",
+                                "platform-manager@wcms.local",
+                                UserRole.PLATFORM_MASTER,
+                                "ACTIVE",
+                                true,
+                                0L
+                        ),
+                        profile
+                ));
+
+        mockMvc.perform(post("/api/users/profiles/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "platform-manager",
+                                  "email": "platform-manager@wcms.local",
+                                  "temporaryPassword": "TempPassword123!",
+                                  "displayName": "Platform Manager",
+                                  "role": "PLATFORM_MASTER",
+                                  "scopeType": "PLATFORM"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.authAccount.id").value(authAccountId.toString()))
+                .andExpect(jsonPath("$.data.profile.authAccountId").value(authAccountId.toString()));
+    }
+
+    @Test
+    void onboardReturnsForbiddenForNonSuperAdmin() throws Exception {
+        mockMvc.perform(post("/api/users/profiles/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("PLATFORM_MASTER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "platform-manager",
+                                  "email": "platform-manager@wcms.local",
+                                  "temporaryPassword": "TempPassword123!",
+                                  "displayName": "Platform Manager",
+                                  "role": "PLATFORM_MASTER",
+                                  "scopeType": "PLATFORM"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+    }
 
     @Test
     void createReturnsCreatedProfileForSuperAdmin() throws Exception {
