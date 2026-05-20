@@ -4,9 +4,11 @@ import com.wcms.core.common.ApiResponse;
 import com.wcms.auth.application.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -27,6 +29,18 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<AuthAccountResponse> createAccount(@Valid @RequestBody CreateAuthAccountRequest request) {
         return ApiResponse.success(AuthAccountResponse.from(authService.createAccount(request.toCommand())));
+    }
+
+    @PostMapping("/accounts/{id}/disable")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<AuthAccountResponse> disableAccount(@PathVariable UUID id) {
+        return ApiResponse.success(AuthAccountResponse.from(authService.disableAccount(id)));
+    }
+
+    @PostMapping("/accounts/{id}/activate")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ApiResponse<AuthAccountResponse> activateAccount(@PathVariable UUID id) {
+        return ApiResponse.success(AuthAccountResponse.from(authService.activateAccount(id)));
     }
 
     @PostMapping("/login")

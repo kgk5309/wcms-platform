@@ -3,6 +3,7 @@ package com.wcms.auth.api;
 import com.wcms.core.common.ApiError;
 import com.wcms.core.common.ApiResponse;
 import com.wcms.core.common.ErrorCode;
+import com.wcms.auth.application.AuthAccountNotFoundException;
 import com.wcms.auth.application.DuplicateAuthAccountException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,13 @@ public class AuthExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.failure(new ApiError(ErrorCode.CONFLICT.name(), exception.getMessage())));
+    }
+
+    @ExceptionHandler(AuthAccountNotFoundException.class)
+    ResponseEntity<ApiResponse<Void>> handleNotFound(AuthAccountNotFoundException exception) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.failure(new ApiError(ErrorCode.NOT_FOUND.name(), exception.getMessage())));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

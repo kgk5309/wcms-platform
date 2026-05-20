@@ -72,6 +72,20 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthAccount disableAccount(UUID id) {
+        AuthAccount account = getAccountForUpdate(id);
+        account.disable();
+        return account;
+    }
+
+    @Transactional
+    public AuthAccount activateAccount(UUID id) {
+        AuthAccount account = getAccountForUpdate(id);
+        account.activate();
+        return account;
+    }
+
+    @Transactional
     public AuthTokenResponse login(LoginRequest request, RequestMeta requestMeta) {
         Instant now = clock.instant();
         AuthAccount account = accountRepository.findByUsername(request.username())
@@ -142,5 +156,10 @@ public class AuthService {
                 refreshTokenExpiresAt,
                 account.isPasswordChangeRequired()
         );
+    }
+
+    private AuthAccount getAccountForUpdate(UUID id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new AuthAccountNotFoundException("auth account not found"));
     }
 }

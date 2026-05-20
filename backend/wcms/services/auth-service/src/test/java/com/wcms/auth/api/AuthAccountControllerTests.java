@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.wcms.auth.application.AuthService;
+import com.wcms.auth.application.AuthAccountNotFoundException;
 import com.wcms.auth.application.CreateAuthAccountCommand;
 import com.wcms.auth.application.DuplicateAuthAccountException;
 import com.wcms.auth.domain.account.AccountRole;
@@ -139,6 +140,63 @@ class AuthAccountControllerTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void disableAccountReturnsDisabledAccountForSuperAdmin() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        AuthAccount account = AuthAccount.create(
+                accountId,
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_MASTER
+        );
+        account.disable();
+        when(authService.disableAccount(accountId)).thenReturn(account);
+
+        mockMvc.perform(post("/api/auth/accounts/{id}/disable", accountId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DISABLED"))
+                .andExpect(jsonPath("$.data.tokenVersion").value(1));
+    }
+
+    @Test
+    void activateAccountReturnsActiveAccountForSuperAdmin() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        AuthAccount account = AuthAccount.create(
+                accountId,
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_MASTER
+        );
+        when(authService.activateAccount(accountId)).thenReturn(account);
+
+        mockMvc.perform(post("/api/auth/accounts/{id}/activate", accountId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
+    }
+
+    @Test
+    void disableAccountReturnsForbiddenForNonSuperAdmin() throws Exception {
+        mockMvc.perform(post("/api/auth/accounts/{id}/disable", UUID.randomUUID())
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("PLATFORM_MASTER")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void disableAccountReturnsNotFoundWhenAccountDoesNotExist() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        when(authService.disableAccount(accountId)).thenThrow(new AuthAccountNotFoundException("auth account not found"));
+
+        mockMvc.perform(post("/api/auth/accounts/{id}/disable", accountId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
 
     private static String bearerToken(String role) throws Exception {

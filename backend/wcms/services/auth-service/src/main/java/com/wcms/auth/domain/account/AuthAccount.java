@@ -137,6 +137,15 @@ public class AuthAccount {
 
     public void disable() {
         this.status = AccountStatus.DISABLED;
+        this.lockedUntil = null;
+        this.failedLoginCount = 0;
+        increaseTokenVersion();
+    }
+
+    public void activate() {
+        this.status = AccountStatus.ACTIVE;
+        this.lockedUntil = null;
+        this.failedLoginCount = 0;
         increaseTokenVersion();
     }
 

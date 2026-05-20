@@ -112,6 +112,53 @@ class AuthServiceTests {
     }
 
     @Test
+    void disableAccountDisablesAccountAndIncreasesTokenVersion() {
+        UUID accountId = UUID.randomUUID();
+        AuthAccount account = AuthAccount.create(
+                accountId,
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_MASTER
+        );
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+
+        AuthAccount disabled = authService.disableAccount(accountId);
+
+        assertThat(disabled.getStatus().name()).isEqualTo("DISABLED");
+        assertThat(disabled.getTokenVersion()).isEqualTo(1L);
+    }
+
+    @Test
+    void activateAccountActivatesAccountAndIncreasesTokenVersion() {
+        UUID accountId = UUID.randomUUID();
+        AuthAccount account = AuthAccount.create(
+                accountId,
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_MASTER
+        );
+        account.disable();
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+
+        AuthAccount activated = authService.activateAccount(accountId);
+
+        assertThat(activated.getStatus().name()).isEqualTo("ACTIVE");
+        assertThat(activated.getTokenVersion()).isEqualTo(2L);
+    }
+
+    @Test
+    void disableAccountRejectsUnknownAccount() {
+        UUID accountId = UUID.randomUUID();
+        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.disableAccount(accountId))
+                .isInstanceOf(AuthAccountNotFoundException.class)
+                .hasMessage("auth account not found");
+    }
+
+    @Test
     void loginIssuesAccessTokenAndStoresHashedRefreshToken() {
         AuthAccount account = AuthAccount.create(
                 UUID.randomUUID(),
