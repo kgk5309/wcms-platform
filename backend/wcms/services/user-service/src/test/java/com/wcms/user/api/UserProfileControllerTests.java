@@ -3,6 +3,7 @@ package com.wcms.user.api;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +15,9 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.wcms.user.application.CreateUserProfileCommand;
 import com.wcms.user.application.DuplicateUserProfileException;
+import com.wcms.user.application.ChangeUserRoleCommand;
+import com.wcms.user.application.MoveUserScopeCommand;
+import com.wcms.user.application.UpdateUserProfileCommand;
 import com.wcms.user.application.UserProfileService;
 import com.wcms.user.domain.UserProfile;
 import com.wcms.user.domain.UserRole;
@@ -196,6 +200,141 @@ class UserProfileControllerTests {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.succeeded").value(false))
                 .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void updateProfileReturnsUpdatedProfileForSuperAdmin() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                profileId,
+                UUID.randomUUID(),
+                "Root Admin",
+                "root-admin@wcms.local",
+                "010-0000-0000",
+                UserRole.SUPER_ADMIN,
+                UserScopeType.PLATFORM,
+                null,
+                null
+        );
+        when(userProfileService.updateProfile(any(UUID.class), any(UpdateUserProfileCommand.class))).thenReturn(profile);
+
+        mockMvc.perform(patch("/api/users/profiles/{id}", profileId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "displayName": "Root Admin",
+                                  "email": "root-admin@wcms.local",
+                                  "phoneNumber": "010-0000-0000"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.displayName").value("Root Admin"))
+                .andExpect(jsonPath("$.data.email").value("root-admin@wcms.local"));
+    }
+
+    @Test
+    void changeRoleReturnsUpdatedRoleForSuperAdmin() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                profileId,
+                UUID.randomUUID(),
+                "Platform User",
+                "platform-user@wcms.local",
+                null,
+                UserRole.PLATFORM_MASTER,
+                UserScopeType.PLATFORM,
+                null,
+                null
+        );
+        when(userProfileService.changeRole(any(UUID.class), any(ChangeUserRoleCommand.class))).thenReturn(profile);
+
+        mockMvc.perform(patch("/api/users/profiles/{id}/role", profileId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "role": "PLATFORM_MASTER"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("PLATFORM_MASTER"));
+    }
+
+    @Test
+    void moveScopeReturnsUpdatedScopeForSuperAdmin() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UUID tenantId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                profileId,
+                UUID.randomUUID(),
+                "Tenant Master",
+                "tenant-master@wcms.local",
+                null,
+                UserRole.TENANT_MASTER,
+                UserScopeType.TENANT,
+                tenantId,
+                null
+        );
+        when(userProfileService.moveScope(any(UUID.class), any(MoveUserScopeCommand.class))).thenReturn(profile);
+
+        mockMvc.perform(patch("/api/users/profiles/{id}/scope", profileId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "scopeType": "TENANT",
+                                  "tenantId": "%s"
+                                }
+                                """.formatted(tenantId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scopeType").value("TENANT"))
+                .andExpect(jsonPath("$.data.tenantId").value(tenantId.toString()));
+    }
+
+    @Test
+    void disableReturnsDisabledProfileForSuperAdmin() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                profileId,
+                UUID.randomUUID(),
+                "Platform User",
+                "platform-user@wcms.local",
+                null,
+                UserRole.PLATFORM_USER,
+                UserScopeType.PLATFORM,
+                null,
+                null
+        );
+        profile.disable();
+        when(userProfileService.disable(profileId)).thenReturn(profile);
+
+        mockMvc.perform(post("/api/users/profiles/{id}/disable", profileId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DISABLED"));
+    }
+
+    @Test
+    void activateReturnsActiveProfileForSuperAdmin() throws Exception {
+        UUID profileId = UUID.randomUUID();
+        UserProfile profile = UserProfile.create(
+                profileId,
+                UUID.randomUUID(),
+                "Platform User",
+                "platform-user@wcms.local",
+                null,
+                UserRole.PLATFORM_USER,
+                UserScopeType.PLATFORM,
+                null,
+                null
+        );
+        when(userProfileService.activate(profileId)).thenReturn(profile);
+
+        mockMvc.perform(post("/api/users/profiles/{id}/activate", profileId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("SUPER_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"));
     }
 
     private static String bearerToken(String role) throws Exception {

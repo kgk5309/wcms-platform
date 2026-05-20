@@ -49,4 +49,47 @@ public class UserProfileService {
     public List<UserProfile> findAll() {
         return userProfileRepository.findAll();
     }
+
+    @Transactional
+    public UserProfile updateProfile(UUID id, UpdateUserProfileCommand command) {
+        UserProfile profile = getForUpdate(id);
+        if (userProfileRepository.existsByEmailAndIdNot(command.email(), id)) {
+            throw new DuplicateUserProfileException("user profile already exists for email");
+        }
+        profile.updateProfile(command.displayName(), command.email(), command.phoneNumber());
+        return profile;
+    }
+
+    @Transactional
+    public UserProfile changeRole(UUID id, ChangeUserRoleCommand command) {
+        UserProfile profile = getForUpdate(id);
+        profile.changeRole(command.role());
+        return profile;
+    }
+
+    @Transactional
+    public UserProfile moveScope(UUID id, MoveUserScopeCommand command) {
+        UserProfile profile = getForUpdate(id);
+        profile.moveScope(command.scopeType(), command.tenantId(), command.clientId());
+        return profile;
+    }
+
+    @Transactional
+    public UserProfile disable(UUID id) {
+        UserProfile profile = getForUpdate(id);
+        profile.disable();
+        return profile;
+    }
+
+    @Transactional
+    public UserProfile activate(UUID id) {
+        UserProfile profile = getForUpdate(id);
+        profile.activate();
+        return profile;
+    }
+
+    private UserProfile getForUpdate(UUID id) {
+        return userProfileRepository.findById(id)
+                .orElseThrow(() -> new UserProfileNotFoundException("user profile not found"));
+    }
 }

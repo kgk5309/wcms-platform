@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,5 +43,39 @@ public class UserProfileController {
         return ApiResponse.success(userProfileService.findAll().stream()
                 .map(UserProfileResponse::from)
                 .toList());
+    }
+
+    @PatchMapping("/{id}")
+    ApiResponse<UserProfileResponse> updateProfile(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserProfileRequest request
+    ) {
+        return ApiResponse.success(UserProfileResponse.from(userProfileService.updateProfile(id, request.toCommand())));
+    }
+
+    @PatchMapping("/{id}/role")
+    ApiResponse<UserProfileResponse> changeRole(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangeUserRoleRequest request
+    ) {
+        return ApiResponse.success(UserProfileResponse.from(userProfileService.changeRole(id, request.toCommand())));
+    }
+
+    @PatchMapping("/{id}/scope")
+    ApiResponse<UserProfileResponse> moveScope(
+            @PathVariable UUID id,
+            @Valid @RequestBody MoveUserScopeRequest request
+    ) {
+        return ApiResponse.success(UserProfileResponse.from(userProfileService.moveScope(id, request.toCommand())));
+    }
+
+    @PostMapping("/{id}/disable")
+    ApiResponse<UserProfileResponse> disable(@PathVariable UUID id) {
+        return ApiResponse.success(UserProfileResponse.from(userProfileService.disable(id)));
+    }
+
+    @PostMapping("/{id}/activate")
+    ApiResponse<UserProfileResponse> activate(@PathVariable UUID id) {
+        return ApiResponse.success(UserProfileResponse.from(userProfileService.activate(id)));
     }
 }
