@@ -203,6 +203,31 @@ class UserProfileControllerTests {
     }
 
     @Test
+    void platformRoleCanAccessSwaggerDocs() throws Exception {
+        mockMvc.perform(get("/api/users/docs")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("PLATFORM_ENGINEER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"));
+    }
+
+    @Test
+    void tenantMasterCanAccessSwaggerDocs() throws Exception {
+        mockMvc.perform(get("/api/users/docs")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("TENANT_MASTER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists());
+    }
+
+    @Test
+    void tenantUserCannotAccessSwaggerDocs() throws Exception {
+        mockMvc.perform(get("/api/users/docs")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken("TENANT_USER")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void updateProfileReturnsUpdatedProfileForSuperAdmin() throws Exception {
         UUID profileId = UUID.randomUUID();
         UserProfile profile = UserProfile.create(

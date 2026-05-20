@@ -94,6 +94,58 @@ class AuthSecurityIntegrationTests {
     }
 
     @Test
+    void platformRoleCanAccessSwaggerDocs() throws Exception {
+        AuthAccount account = AuthAccount.create(
+                UUID.fromString("00000000-0000-4000-8000-000000000003"),
+                "platform-engineer",
+                "platform-engineer@wcms.local",
+                "encoded",
+                AccountRole.PLATFORM_ENGINEER
+        );
+        String token = jwtTokenIssuer.issue(account, Instant.now()).tokenValue();
+
+        mockMvc.perform(get("/api/auth/docs")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"));
+    }
+
+    @Test
+    void tenantMasterCanAccessSwaggerDocs() throws Exception {
+        AuthAccount account = AuthAccount.create(
+                UUID.fromString("00000000-0000-4000-8000-000000000004"),
+                "tenant-master",
+                "tenant-master@wcms.local",
+                "encoded",
+                AccountRole.TENANT_MASTER
+        );
+        String token = jwtTokenIssuer.issue(account, Instant.now()).tokenValue();
+
+        mockMvc.perform(get("/api/auth/docs")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists());
+    }
+
+    @Test
+    void tenantUserCannotAccessSwaggerDocs() throws Exception {
+        AuthAccount account = AuthAccount.create(
+                UUID.fromString("00000000-0000-4000-8000-000000000005"),
+                "tenant-user",
+                "tenant-user@wcms.local",
+                "encoded",
+                AccountRole.TENANT_USER
+        );
+        String token = jwtTokenIssuer.issue(account, Instant.now()).tokenValue();
+
+        mockMvc.perform(get("/api/auth/docs")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void missingAccessTokenCannotAccessProtectedEndpoint() throws Exception {
         mockMvc.perform(get("/test/protected/me"))
                 .andExpect(status().isUnauthorized())

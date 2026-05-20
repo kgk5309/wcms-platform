@@ -23,6 +23,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_ENDPOINTS = {
+            "/api/auth/docs",
+            "/api/auth/docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
+    };
+
+    private static final String[] SWAGGER_ROLES = {
+            "SUPER_ADMIN",
+            "PLATFORM_MASTER",
+            "PLATFORM_ENGINEER",
+            "PLATFORM_USER",
+            "TENANT_MASTER"
+    };
+
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -57,6 +72,7 @@ public class SecurityConfig {
                         }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers(SWAGGER_ENDPOINTS).hasAnyRole(SWAGGER_ROLES)
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         .anyRequest().authenticated()
                 )

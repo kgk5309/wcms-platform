@@ -29,6 +29,13 @@ management:
       exposure:
         include: health,info
 
+springdoc:
+  api-docs:
+    path: /api/auth/docs
+  swagger-ui:
+    path: /api/auth/docs/swagger-ui.html
+    persist-authorization: true
+
 wcms:
   auth:
     token:
