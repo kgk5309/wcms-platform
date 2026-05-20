@@ -1,9 +1,11 @@
 package com.wcms.auth.api;
 
+import com.wcms.core.common.ApiResponse;
 import com.wcms.auth.application.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,13 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
+    }
+
+    @PostMapping("/accounts")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<AuthAccountResponse> createAccount(@Valid @RequestBody CreateAuthAccountRequest request) {
+        return ApiResponse.success(AuthAccountResponse.from(authService.createAccount(request.toCommand())));
     }
 
     @PostMapping("/login")

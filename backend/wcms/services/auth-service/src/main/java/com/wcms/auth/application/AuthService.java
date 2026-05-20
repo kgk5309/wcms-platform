@@ -53,6 +53,25 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthAccount createAccount(CreateAuthAccountCommand command) {
+        if (accountRepository.existsByUsername(command.username())) {
+            throw new DuplicateAuthAccountException("auth account already exists for username");
+        }
+        if (accountRepository.existsByEmail(command.email())) {
+            throw new DuplicateAuthAccountException("auth account already exists for email");
+        }
+
+        AuthAccount account = AuthAccount.create(
+                UUID.randomUUID(),
+                command.username(),
+                command.email(),
+                passwordEncoder.encode(command.temporaryPassword()),
+                command.role()
+        );
+        return accountRepository.save(account);
+    }
+
+    @Transactional
     public AuthTokenResponse login(LoginRequest request, RequestMeta requestMeta) {
         Instant now = clock.instant();
         AuthAccount account = accountRepository.findByUsername(request.username())

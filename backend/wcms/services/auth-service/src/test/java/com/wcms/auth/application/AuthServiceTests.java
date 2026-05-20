@@ -61,6 +61,57 @@ class AuthServiceTests {
     );
 
     @Test
+    void createAccountStoresEncodedTemporaryPassword() {
+        CreateAuthAccountCommand command = new CreateAuthAccountCommand(
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "TempPassword123!",
+                AccountRole.PLATFORM_MASTER
+        );
+        when(passwordEncoder.encode("TempPassword123!")).thenReturn("encoded-temp-password");
+        when(accountRepository.save(any(AuthAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AuthAccount account = authService.createAccount(command);
+
+        assertThat(account.getUsername()).isEqualTo("platform-manager");
+        assertThat(account.getEmail()).isEqualTo("platform-manager@wcms.local");
+        assertThat(account.getPasswordHash()).isEqualTo("encoded-temp-password");
+        assertThat(account.isPasswordChangeRequired()).isTrue();
+
+        ArgumentCaptor<AuthAccount> captor = ArgumentCaptor.forClass(AuthAccount.class);
+        verify(accountRepository).save(captor.capture());
+        assertThat(captor.getValue().getRole()).isEqualTo(AccountRole.PLATFORM_MASTER);
+    }
+
+    @Test
+    void createAccountRejectsDuplicatedUsername() {
+        when(accountRepository.existsByUsername("platform-manager")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.createAccount(new CreateAuthAccountCommand(
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "TempPassword123!",
+                AccountRole.PLATFORM_MASTER
+        )))
+                .isInstanceOf(DuplicateAuthAccountException.class)
+                .hasMessage("auth account already exists for username");
+    }
+
+    @Test
+    void createAccountRejectsDuplicatedEmail() {
+        when(accountRepository.existsByEmail("platform-manager@wcms.local")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.createAccount(new CreateAuthAccountCommand(
+                "platform-manager",
+                "platform-manager@wcms.local",
+                "TempPassword123!",
+                AccountRole.PLATFORM_MASTER
+        )))
+                .isInstanceOf(DuplicateAuthAccountException.class)
+                .hasMessage("auth account already exists for email");
+    }
+
+    @Test
     void loginIssuesAccessTokenAndStoresHashedRefreshToken() {
         AuthAccount account = AuthAccount.create(
                 UUID.randomUUID(),
