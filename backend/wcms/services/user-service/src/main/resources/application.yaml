@@ -28,3 +28,9 @@ management:
     web:
       exposure:
         include: health,info
+
+wcms:
+  user:
+    token:
+      issuer: ${WCMS_USER_TOKEN_ISSUER:wcms-platform}
+      secret: ${WCMS_USER_TOKEN_SECRET:wcms-local-dev-secret-must-be-rotated}

@@ -2,6 +2,7 @@ package com.wcms.user.application;
 
 import com.wcms.user.domain.UserProfile;
 import com.wcms.user.infra.persistence.UserProfileRepository;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +19,10 @@ public class UserProfileService {
     @Transactional
     public UserProfile create(CreateUserProfileCommand command) {
         if (userProfileRepository.existsByAuthAccountId(command.authAccountId())) {
-            throw new IllegalArgumentException("user profile already exists for authAccountId");
+            throw new DuplicateUserProfileException("user profile already exists for authAccountId");
         }
         if (userProfileRepository.existsByEmail(command.email())) {
-            throw new IllegalArgumentException("user profile already exists for email");
+            throw new DuplicateUserProfileException("user profile already exists for email");
         }
 
         UserProfile profile = UserProfile.create(
@@ -36,5 +37,16 @@ public class UserProfileService {
                 command.clientId()
         );
         return userProfileRepository.save(profile);
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfile get(UUID id) {
+        return userProfileRepository.findById(id)
+                .orElseThrow(() -> new UserProfileNotFoundException("user profile not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserProfile> findAll() {
+        return userProfileRepository.findAll();
     }
 }

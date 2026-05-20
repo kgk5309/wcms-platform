@@ -59,7 +59,7 @@ class UserProfileServiceTests {
                 null,
                 null
         )))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DuplicateUserProfileException.class)
                 .hasMessage("user profile already exists for authAccountId");
     }
 
@@ -78,7 +78,7 @@ class UserProfileServiceTests {
                 null,
                 null
         )))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DuplicateUserProfileException.class)
                 .hasMessage("user profile already exists for email");
     }
 }
