@@ -35,3 +35,9 @@ dependencies {
 tasks.named('compileTestJava') {
     classpath += sourceSets.main.output
 }
+
+sourceSets {
+    test {
+        java.srcDirs += sourceSets.main.java.srcDirs
+    }
+}

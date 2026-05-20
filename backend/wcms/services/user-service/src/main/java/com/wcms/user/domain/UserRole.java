@@ -1,0 +1,14 @@
+package com.wcms.user.domain;
+
+public enum UserRole {
+    SUPER_ADMIN,
+    PLATFORM_MASTER,
+    PLATFORM_ENGINEER,
+    PLATFORM_USER,
+    TENANT_MASTER,
+    TENANT_ENGINEER,
+    TENANT_USER,
+    CLIENT_MASTER,
+    CLIENT_ENGINEER,
+    CLIENT_USER
+}
